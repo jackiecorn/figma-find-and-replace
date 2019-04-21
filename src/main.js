@@ -1,14 +1,9 @@
 import App from './App.vue';
 
-const shortcut = {
-	mac: { command: true, key: 'F' },
-	windows: { control: true, key: 'F' }
-};
-
-const showUI = () => {
-	figmaPlus.showUI(
-		'Find and Replace',
-		(tabContent1, tabContent2) => {
+figmaPlus.addCommand({ label: 'Find and Replace', action: () => {
+	figmaPlus.showUI({
+		title: 'Find and Replace',
+		callback: (tabContent1, tabContent2) => {
 			new figmaPlus.Vue({
 				el: tabContent1,
 				components: { App },
@@ -30,16 +25,12 @@ const showUI = () => {
 				}
 			});
 		},
-		360,
-		null,
-		1,
-		0.08,
-		false,
-		null,
-		['Text', 'Layer Name']
-	);
-};
-
-figmaPlus.createPluginsMenuItem('Find and Replace', showUI, null, shortcut);
-figmaPlus.createContextMenuItem.Canvas('Find and Replace', showUI, null, shortcut);
-figmaPlus.createKeyboardShortcut(shortcut, showUI);
+		width: 360,
+		positionX: 1,
+		positionY: 0.08,
+		tabs: ['Text', 'Layer Name']
+	});
+}, shortcut: {
+	mac: { command: true, key: 'F' },
+	windows: { control: true, key: 'F' }
+}, showInCanvasMenu: true });

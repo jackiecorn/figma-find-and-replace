@@ -1,6 +1,3 @@
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const ZipPlugin = require('zip-webpack-plugin');
-
 module.exports = {
 	filenameHashing: false,
 	productionSourceMap: false,
@@ -15,18 +12,6 @@ module.exports = {
 		},
 		output: {
 			jsonpFunction: 'findAndReplace'
-		},
-		plugins: [
-			new CopyWebpackPlugin([
-				{
-					from: './src/contentScript.js',
-					to: 'js'
-				}
-			]),
-			new ZipPlugin({
-				path: '..',
-				filename: 'extension.zip'
-			})
-		]
+		}
 	}
 };

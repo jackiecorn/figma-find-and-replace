@@ -7,21 +7,20 @@
 			#resultCount {{ resultText }}
 			#prevButton.figma-icon.chevron-up(ref='prevButton' :class='{ disabled: disabled }' @click='prev')
 			#nextButton.figma-icon.chevron-down(ref='nextButton' :class='{ disabled: disabled }' @click='next')
-			.figma-icon-button.more(ref='findSettingsButton' @click='showFindSettings = !showFindSettings')
+			.figma-icon-button.more(ref='findSettingsButton' @click='showFindSettings = !showFindSettings' :class='{active: showFindSettings}')
 		#findSettings(v-show='showFindSettings')
 			#wherePicker
 				.figma-icon.align-left(ref='startButton' :class='{active: matchWhere === "start"}' @click='matchWhere = "start"')
 				.figma-icon.align-center(ref='anywhereButton' :class='{active: matchWhere === "anywhere"}' @click='matchWhere = "anywhere"')
 				.figma-icon.align-right(ref='endButton' :class='{active: matchWhere === "end"}' @click='matchWhere = "end"')
 				.figma-icon.align-justified(ref='exactButton' :class='{active: matchWhere === "exact"}' @click='matchWhere = "exact"')
-			#caseButton(ref='caseButton' :class='{ active: caseSensitive }' @click='caseSensitive = !caseSensitive')
-				<svg class="svg" width="30" height="24" xmlns="http://www.w3.org/2000/svg"><path d="M19 15c1.105 0 2-.895 2-2 0-1.105-.895-2-2-2-1.104 0-2 .895-2 2 0 1.105.896 2 2 2zm0 1c1.657 0 3-1.343 3-3 0-1.657-1.343-3-3-3-1.656 0-3 1.343-3 3 0 1.657 1.344 3 3 3z" fill-rule="evenodd" fill="#fff"></path><path d="M21 10h1v6h-1v-6z" fill="#fff"></path><path d="M11.25 8h-.344l-.123.322L7.85 16h1.07l2.58-6.754L14.083 16h1.07l-2.936-7.679L12.095 8h-.845zm2.605 6h-4.5v-1h4.5v1z" fill-rule="evenodd" fill="#fff"></path></svg>
-			#wholeButton(ref='wholeButton' :class='{ active: matchWhole }' @click='matchWhole = !matchWhole') [ A ]
+			#caseButton.figma-icon.capitalize(ref='caseButton' :class='{ active: caseSensitive }' @click='caseSensitive = !caseSensitive')
+			#wholeButton(ref='wholeButton' :class='{ active: matchWhole }' @click='matchWhole = !matchWhole') [A]
 	.section
 		h3 Replace with
 		#replaceControl
 			input(v-model='replaceText' id='replaceInput' @keydown='replaceInputKeyboard')
-			.figma-icon-button.more(ref='replaceSettingsButton' @click='showReplaceSettings = !showReplaceSettings')
+			.figma-icon-button.more(ref='replaceSettingsButton' @click='showReplaceSettings = !showReplaceSettings' :class='{active: showReplaceSettings}')
 		#previewText {{previewText}}
 		#replaceSettings(v-show='showReplaceSettings')
 			.checkboxGroup
@@ -34,8 +33,8 @@
 				input(type="checkbox" id='replaceWholeLayerNameCheckbox' v-model='replaceWholeLayerName')
 				label(for='replaceWholeLayerNameCheckbox') Replace whole layer name
 	#footer
-		button(@click='replace' :disabled='replaceDisabled') Replace
-		button.primary(@click='replaceAll' :disabled='replaceDisabled' @keydown='replaceAllButtonKeyboard') Replace all
+		button#replaceButton(@click='replace' :disabled='replaceDisabled') Replace
+		button#replaceAllButton.primary(@click='replaceAll' :disabled='replaceDisabled' @keydown='replaceAllButtonKeyboard') Replace all
 </template>
 
 <script>
@@ -51,8 +50,8 @@ export default {
     currentNode(node) {
       if (node && node.id !== undefined) {
         this.currentText = this.mode === "text" ? node.characters : node.name;
-        figmaPlus.scene.panToNode(node);
-        figmaPlus.scene.selection = [node];
+        figmaPlus.viewport.panToNode(node);
+        figmaPlus.currentPage.selection = [node];
       }
     },
     caseSensitive() {
@@ -149,24 +148,30 @@ export default {
   },
   mounted() {
     this.$refs.findInput.focus();
-    window.figmaPlus.addTooltip(
-      this.$refs.startButton,
-      "Beginning of text",
-      false
-    );
-    window.figmaPlus.addTooltip(
-      this.$refs.anywhereButton,
-      "Anywhere in text",
-      false
-    );
-    window.figmaPlus.addTooltip(this.$refs.endButton, "End of text", false);
-    window.figmaPlus.addTooltip(this.$refs.exactButton, "Exact match", false);
-    window.figmaPlus.addTooltip(this.$refs.caseButton, "Match case", false);
-    window.figmaPlus.addTooltip(
-      this.$refs.wholeButton,
-      "Whole words only",
-      false
-    );
+    figmaPlus.addTooltip({
+      element: this.$refs.startButton,
+      text: "Beginning of text"
+    });
+    figmaPlus.addTooltip({
+      element: this.$refs.anywhereButton,
+      text: "Anywhere in text"
+    });
+    figmaPlus.addTooltip({
+      element: this.$refs.endButton,
+      text: "End of text"
+    });
+    figmaPlus.addTooltip({
+      element: this.$refs.exactButton,
+      text: "Exact match"
+    });
+    figmaPlus.addTooltip({
+      element: this.$refs.caseButton,
+      text: "Match case"
+    });
+    figmaPlus.addTooltip({
+      element: this.$refs.wholeButton,
+      text: "Whole words only"
+    });
   },
   methods: {
     hide() {
@@ -175,7 +180,7 @@ export default {
     find(findText) {
       var self = this;
       self.foundNodes = [];
-      let currentPageNodes = figmaPlus.scene.currentPage
+      let currentPageNodes = figmaPlus.currentPage
         .getAllDescendents()
         .reverse();
       var global = self.caseSensitive ? "g" : "gi";
@@ -306,7 +311,7 @@ export default {
         } else {
           this.currentNode = undefined;
           this.currentText = "";
-          figmaPlus.scene.selection = [];
+          figmaPlus.currentPage.selection = [];
         }
         document.querySelector("#replaceInput").focus();
       }, 500);
@@ -344,7 +349,7 @@ export default {
           node.name = newStringValue;
         }
       });
-      figmaPlus.scene.selection = [];
+      figmaPlus.currentPage.selection = [];
       self.foundNodes = [];
       self.currentNode = undefined;
       self.currentText = "";
@@ -373,7 +378,7 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .tab-content {
   .section {
     margin-bottom: 12px;
@@ -381,29 +386,49 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
   button {
     margin-left: 12px;
   }
+	.figma-icon {
+		width: 24px;
+		height: 24px;
+	}
 }
 
 #findControl,
 #findSettings,
 #replaceControl {
   display: flex;
+	align-items: center;
 }
 
 #findSettings {
-  margin-top: 6px;
+  margin: 8px;
   .active {
-    background-color: #30c2ff !important;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
   }
 }
 
+.figma-icon-button.more {
+    width: 32px;
+    height: 32px;
+		&.active {
+		background-color: #18a0fb;
+    color: #fff;
+		}
+		&:focus, &:active {
+			border-color: #18a0fb;
+    box-shadow: inset 0 0 0 2px #18a0fb;
+    border-radius: 2px;
+		}
+}
+
 #findInput {
-  padding-right: 84px;
+  padding-right: 36px;
 }
 
 #findInput,
 #replaceInput {
   flex-grow: 1;
-  margin-right: 6px;
+	margin-right: 8px;
 }
 
 #footer {
@@ -414,11 +439,10 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 }
 
 #resultCount {
-  color: #aaa;
-  padding-top: 5px;
-  position: absolute;
-  right: 97px;
-  font-weight: 300;
+  color: #b3b3b3;
+	position: absolute;
+	right: 110px;
+	font-weight: 300;
 }
 
 #previewText,
@@ -427,26 +451,29 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
   margin-top: 6px;
 }
 
-#wherePicker {
+#wherePicker,
+#caseButton, #wholeButton {
   display: flex;
   border-radius: 3px;
   margin-right: 8px;
+  border: 1px solid transparent;
   overflow: hidden;
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.1);
+    .active {
+      border-radius: 0px;
+    }
+  }
   .figma-icon {
-    background: #d4d4d4;
-    color: #fff;
-    width: 28px;
+    color: #333;
+    width: 24px;
   }
 }
 
 #prevButton {
-  position: absolute;
-  right: 67px;
-  border-radius: 0px;
-  height: 22px;
-  margin-top: 1px;
-  border-left: 1px solid #d4d4d4;
-  width: 22px;
+  border-radius: 2px;
+  height: 24px;
+  width: 24px;
   &:after {
     font-size: 13px;
     transform: translateY(-1px) rotate(180deg);
@@ -454,13 +481,10 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 }
 
 #nextButton {
-  position: absolute;
-  right: 44.5px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
-  height: 22px;
-  margin-top: 1px;
-  width: 22px;
+	border-radius: 2px;
+  height: 24px;
+  width: 24px;
+	margin-right: 4px;
   &:after {
     font-size: 13px;
   }
@@ -476,40 +500,22 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
   background: transparent;
 }
 
-#findInput:focus ~ #prevButton {
-  height: 20px;
-  margin-top: 2px;
-}
-
-#findInput:focus ~ #nextButton {
-  height: 20px;
-  margin-top: 2px;
-  right: 44px;
-  width: 23px;
-  min-width: 23px;
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
-}
-
 #caseButton {
-  background: #d4d4d4;
-  border-radius: 3px;
-  position: relative;
-  width: 34px;
-  height: 24px;
-  padding-left: 2px;
+	width: 24px;
+	&:after {
+		font-size: 16px;
+		height: 6px;
+	}
 }
 
 #wholeButton {
-  background: #d4d4d4;
-  border-radius: 3px;
-  width: 28px;
-  height: 19px;
-  color: #fff;
-  padding-top: 5px;
-  padding-left: 8px;
-  margin-left: 7px;
-  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  color: #333;
+  font-size: 11px;
+	text-align: center;
+  line-height: 24px;
+	display: block;
 }
 
 #replaceSettings {
