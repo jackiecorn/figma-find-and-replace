@@ -4,8 +4,8 @@
 	"author": "Jackie Chui",
 	"github": "https://github.com/jachui/figma-find-and-replace-desktop",
 	"description": "Find and replace texts and layer names in your Figma document.",
-	"instructions": "Right click on the canvas and select 'Find and Replace', or by pressing Control/Command + F.",
-	"images": ["screenshots/animation.gif", "screenshot1.jpg", "screenshot2.png"],
+	"instructions": "Right click on the canvas and select 'Find and Replace', or press Control/Command + F.",
+	"images": ["screenshots/screenshot1.png", "screenshots/screenshot2.png"],
 	"js": ["dist/js/chunk-vendors.js", "dist/js/app.js"],
 	"css": ["dist/css/app.css"]
 }
