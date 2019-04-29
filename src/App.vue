@@ -1,5 +1,5 @@
 <template lang="pug">
-.tab-content
+.find-and-replace-tab
 	.section
 		h3 Find
 		#findControl
@@ -42,7 +42,7 @@ export default {
   watch: {
     findText(findString) {
       findString = findString.replace(/'/g, "’");
-      self.currentText = "";
+      this.currentText = "";
       findString !== ""
         ? this.find(findString)
         : App.sendMessage("clearSelection");
@@ -82,36 +82,34 @@ export default {
     showReplaceSettings: false
   }),
   computed: {
-    resultText: function() {
-      var self = this;
-      if (self.findText === "") return "";
-      if (self.foundNodes.length === 0) return "0/0";
+    resultText() {
+      if (this.findText === "") return "";
+      if (this.foundNodes.length === 0) return "0/0";
       else
         return (
-          self.foundNodes.indexOf(self.currentNode) +
+          this.foundNodes.indexOf(this.currentNode) +
           1 +
           "/" +
-          self.foundNodes.length
+          this.foundNodes.length
         );
     },
-    disabled: function() {
+    disabled() {
       return this.foundNodes.length < 2 || this.findText === "";
     },
-    replaceDisabled: function() {
+    replaceDisabled() {
       return this.foundNodes.length < 1 || this.findText === "";
     },
-    newText: function() {
-      var self = this;
-      if (self.currentText === undefined) return "";
+    newText() {
+      if (this.currentText === undefined) return "";
       else {
-        if (!self.replaceWholeLayerName) {
-          var newStringValue = self.currentText.replace(
-            new RegExp(self.findText, "gi"),
-            function(eachMatch) {
+        if (!this.replaceWholeLayerName) {
+          var newStringValue = this.currentText.replace(
+            new RegExp(this.findText, "gi"),
+            eachMatch => {
               return intelligentReplace(
                 eachMatch,
-                self.replaceText,
-                self.keepCase
+                this.replaceText,
+                this.keepCase
               );
             }
           );
@@ -119,17 +117,17 @@ export default {
           return newStringValue;
         } else
           return intelligentReplace(
-            self.currentText,
-            self.replaceText,
-            self.keepCase
+            this.currentText,
+            this.replaceText,
+            this.keepCase
           );
       }
     },
-    foundText: function() {
+    foundText() {
       if (this.findText === "" || this.currentText === undefined) return "";
       else return this.currentText;
     },
-    previewText: function() {
+    previewText() {
       if (
         this.replaceWholeLayerName &&
         this.replaceText === "" &&
@@ -178,68 +176,53 @@ export default {
       figmaPlus.hideUI("Find and Replace");
     },
     find(findText) {
-      var self = this;
-      self.foundNodes = [];
-      let currentPageNodes = figmaPlus.currentPage
-        .getAllDescendents()
-        .reverse();
-      var global = self.caseSensitive ? "g" : "gi";
       findText = (findText + "").trim();
-      if (this.mode === "text")
-        currentPageNodes = currentPageNodes.filter(
-          node => node.type === "TEXT"
-        );
-      currentPageNodes.forEach(node => {
-        var textToFind = self.mode === "text" ? node.characters : node.name;
-        switch (self.matchWhere) {
-          case "anywhere":
-            if (self.matchWhole) {
-              if (
-                textToFind.split(" ").some(word => {
-                  if (self.caseSensitive) return word === findText;
+      const global = this.caseSensitive ? "g" : "gi";
+      this.foundNodes = figmaPlus.currentPage.findAll(node => {
+        if (this.mode === "text" && node.type !== "TEXT") return false;
+        else {
+          const textToFind = this.mode === "text" ? node.characters : node.name;
+          switch (this.matchWhere) {
+            case "anywhere":
+              if (this.matchWhole) {
+                return textToFind.split(" ").some(word => {
+                  if (this.caseSensitive) return word === findText;
                   else return word.toLowerCase() === findText.toLowerCase();
-                })
-              )
-                self.foundNodes.push(node);
-            } else {
-              if (self.caseSensitive) {
-                if (textToFind.includes(findText)) self.foundNodes.push(node);
+                });
               } else {
-                if (node.id === "2491:69")
-                  console.log(textToFind.toLowerCase());
-                if (node.id === "2491:69") console.log(findText.toLowerCase());
-                if (textToFind.toLowerCase().includes(findText.toLowerCase()))
-                  self.foundNodes.push(node);
+                if (this.caseSensitive) return textToFind.includes(findText);
+                else
+                  return textToFind
+                    .toLowerCase()
+                    .includes(findText.toLowerCase());
               }
-            }
-            break;
-          case "exact":
-            if (self.caseSensitive) {
-              if (textToFind === findText) self.foundNodes.push(node);
-            } else {
-              if (textToFind.toLowerCase() === findText.toLowerCase())
-                self.foundNodes.push(node);
-            }
-            break;
-          case "start":
-            var regexStart = self.matchWhole
-              ? new RegExp("^\\b" + findText + "\\b", global)
-              : new RegExp("^" + findText, global);
-            if (regexStart.test(textToFind)) self.foundNodes.push(node);
-            break;
-          case "end":
-            var regexEnd = self.matchWhole
-              ? new RegExp("\\b" + findText + "\\b$", global)
-              : new RegExp(findText + "$", global);
-            if (regexEnd.test(textToFind)) self.foundNodes.push(node);
+              break;
+            case "exact":
+              if (this.caseSensitive) return textToFind === findText;
+              else return textToFind.toLowerCase() === findText.toLowerCase();
+              break;
+            case "start":
+              let regexStart = this.matchWhole
+                ? new RegExp("^\\b" + findText + "\\b", global)
+                : new RegExp("^" + findText, global);
+              return regexStart.test(textToFind);
+              break;
+            case "end":
+              var regexEnd = this.matchWhole
+                ? new RegExp("\\b" + findText + "\\b$", global)
+                : new RegExp(findText + "$", global);
+              return regexEnd.test(textToFind);
+          }
         }
       });
-      if (self.foundNodes.length > 0) {
-        self.currentNode = self.foundNodes[0];
+
+      if (this.foundNodes.length > 0) {
+        this.currentNode = this.foundNodes[0];
       } else {
         App.sendMessage("clearSelection");
       }
     },
+
     next() {
       var index = this.foundNodes.indexOf(this.currentNode);
       var nextIndex;
@@ -317,18 +300,17 @@ export default {
       }, 500);
     },
     replaceAll() {
-      var self = this;
-      self.foundNodes.forEach(node => {
-        var text = self.mode === "text" ? node.characters : node.name;
+      this.foundNodes.forEach(node => {
+        var text = this.mode === "text" ? node.characters : node.name;
         var newStringValue;
-        if (!self.replaceWholeLayerName) {
+        if (!this.replaceWholeLayerName) {
           newStringValue = text.replace(
-            new RegExp(self.findText, "gi"),
-            function(eachMatch) {
+            new RegExp(this.findText, "gi"),
+            eachMatch => {
               return intelligentReplace(
                 eachMatch,
-                self.replaceText,
-                self.keepCase
+                this.replaceText,
+                this.keepCase
               );
             }
           );
@@ -336,29 +318,29 @@ export default {
         } else
           newStringValue = intelligentReplace(
             text,
-            self.replaceText,
-            self.keepCase
+            this.replaceText,
+            this.keepCase
           );
-        if (self.mode === "text") {
+        if (this.mode === "text") {
           node.characters = newStringValue;
           if (this.replaceLayerName) node.name = newStringValue;
         }
-        if (self.mode === "layerName") {
-          if (self.replaceWholeLayerName && self.replaceText === "")
+        if (this.mode === "layerName") {
+          if (this.replaceWholeLayerName && this.replaceText === "")
             newStringValue = "";
           node.name = newStringValue;
         }
       });
       figmaPlus.currentPage.selection = [];
-      self.foundNodes = [];
-      self.currentNode = undefined;
-      self.currentText = "";
-      self.find(self.findText);
+      this.foundNodes = [];
+      this.currentNode = undefined;
+      this.currentText = "";
+      this.find(this.findText);
     }
   }
 };
 
-function intelligentReplace(replaceThis, replaceWith, keepCase) {
+const intelligentReplace = (replaceThis, replaceWith, keepCase) => {
   var replacement = replaceWith;
   if (keepCase) {
     if (replaceThis.charAt(0) === replaceThis.charAt(0).toLowerCase()) {
@@ -375,28 +357,26 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
     }
   }
   return replacement;
-}
+};
 </script>
 
 <style lang="scss" scoped>
-.tab-content {
-  .section {
-    margin-bottom: 12px;
-  }
-  button {
-    margin-left: 12px;
-  }
-	.figma-icon {
-		width: 24px;
-		height: 24px;
-	}
+.section {
+  margin-bottom: 12px;
+}
+button {
+  margin-left: 12px;
+}
+.figma-icon {
+  width: 24px;
+  height: 24px;
 }
 
 #findControl,
 #findSettings,
 #replaceControl {
   display: flex;
-	align-items: center;
+  align-items: center;
 }
 
 #findSettings {
@@ -408,17 +388,18 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 }
 
 .figma-icon-button.more {
-    width: 32px;
-    height: 32px;
-		&.active {
-		background-color: #18a0fb;
+  width: 32px;
+  height: 32px;
+  &.active {
+    background-color: #18a0fb;
     color: #fff;
-		}
-		&:focus, &:active {
-			border-color: #18a0fb;
+  }
+  &:focus,
+  &:active {
+    border-color: #18a0fb;
     box-shadow: inset 0 0 0 2px #18a0fb;
     border-radius: 2px;
-		}
+  }
 }
 
 #findInput {
@@ -428,7 +409,7 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 #findInput,
 #replaceInput {
   flex-grow: 1;
-	margin-right: 8px;
+  margin-right: 8px;
 }
 
 #footer {
@@ -440,9 +421,9 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 
 #resultCount {
   color: #b3b3b3;
-	position: absolute;
-	right: 110px;
-	font-weight: 300;
+  position: absolute;
+  right: 110px;
+  font-weight: 300;
 }
 
 #previewText,
@@ -452,7 +433,8 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 }
 
 #wherePicker,
-#caseButton, #wholeButton {
+#caseButton,
+#wholeButton {
   display: flex;
   border-radius: 3px;
   margin-right: 8px;
@@ -481,10 +463,10 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 }
 
 #nextButton {
-	border-radius: 2px;
+  border-radius: 2px;
   height: 24px;
   width: 24px;
-	margin-right: 4px;
+  margin-right: 4px;
   &:after {
     font-size: 13px;
   }
@@ -501,11 +483,11 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
 }
 
 #caseButton {
-	width: 24px;
-	&:after {
-		font-size: 16px;
-		height: 6px;
-	}
+  width: 24px;
+  &:after {
+    font-size: 16px;
+    height: 6px;
+  }
 }
 
 #wholeButton {
@@ -513,9 +495,9 @@ function intelligentReplace(replaceThis, replaceWith, keepCase) {
   height: 24px;
   color: #333;
   font-size: 11px;
-	text-align: center;
+  text-align: center;
   line-height: 24px;
-	display: block;
+  display: block;
 }
 
 #replaceSettings {
