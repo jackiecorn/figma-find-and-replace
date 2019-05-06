@@ -1,5 +1,5 @@
 <template lang="pug">
-.find-and-replace-tab
+.find-and-replace-tab(:class='{ darkMode: darkMode }')
 	.section
 		h3 Find
 		#findControl
@@ -79,7 +79,8 @@ export default {
     replaceLayerName: true,
     replaceWholeLayerName: false,
     showFindSettings: false,
-    showReplaceSettings: false
+    showReplaceSettings: false,
+    darkMode: false
   }),
   computed: {
     resultText() {
@@ -142,6 +143,11 @@ export default {
       )
         return "";
       else return "Preview: " + this.newText;
+    }
+  },
+  beforeMount() {
+    if (document.getElementById("f-ui")) {
+      this.darkMode = true;
     }
   },
   mounted() {
@@ -429,7 +435,7 @@ button {
 #previewText,
 #foundText {
   color: #aaa;
-  margin-top: 6px;
+  margin: 6px 8px 0px 8px;
 }
 
 #wherePicker,
@@ -449,6 +455,25 @@ button {
   .figma-icon {
     color: #333;
     width: 24px;
+  }
+}
+
+.darkMode {
+  color: rgb(193, 197, 201);
+
+  #wherePicker,
+  #caseButton,
+  #wholeButton {
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .figma-icon {
+      color: rgb(193, 197, 201);
+    }
+  }
+
+  #findSettings .active {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -493,7 +518,6 @@ button {
 #wholeButton {
   width: 24px;
   height: 24px;
-  color: #333;
   font-size: 11px;
   text-align: center;
   line-height: 24px;
