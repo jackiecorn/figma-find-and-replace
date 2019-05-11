@@ -50,8 +50,11 @@ export default {
     currentNode(node) {
       if (node && node.id !== undefined) {
         this.currentText = this.mode === "text" ? node.characters : node.name;
-        figmaPlus.viewport.panToNode(node);
-        figmaPlus.currentPage.selection = [node];
+        figma.currentPage.selection = [node];
+        figma.viewport.center = {
+          x: node.absoluteTransform[0][2],
+          y: node.absoluteTransform[1][2]
+        };
       }
     },
     caseSensitive() {
@@ -146,7 +149,7 @@ export default {
     }
   },
   beforeMount() {
-    if (document.getElementById("f-ui")) {
+    if (document.getElementById("figma-dark-mode")) {
       this.darkMode = true;
     }
   },
@@ -184,7 +187,7 @@ export default {
     find(findText) {
       findText = (findText + "").trim();
       const global = this.caseSensitive ? "g" : "gi";
-      this.foundNodes = figmaPlus.currentPage.findAll(node => {
+      this.foundNodes = figma.currentPage.findAll(node => {
         if (this.mode === "text" && node.type !== "TEXT") return false;
         else {
           const textToFind = this.mode === "text" ? node.characters : node.name;
@@ -224,6 +227,7 @@ export default {
 
       if (this.foundNodes.length > 0) {
         this.currentNode = this.foundNodes[0];
+        this.currentText = this.foundNodes[0].characters;
       } else {
         App.sendMessage("clearSelection");
       }
@@ -300,7 +304,7 @@ export default {
         } else {
           this.currentNode = undefined;
           this.currentText = "";
-          figmaPlus.currentPage.selection = [];
+          figma.currentPage.selection = [];
         }
         document.querySelector("#replaceInput").focus();
       }, 500);
@@ -337,7 +341,7 @@ export default {
           node.name = newStringValue;
         }
       });
-      figmaPlus.currentPage.selection = [];
+      figma.currentPage.selection = [];
       this.foundNodes = [];
       this.currentNode = undefined;
       this.currentText = "";
